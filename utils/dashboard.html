@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Quant - Multi-Asset Live Scanner & Brain Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #06080d;
+            --bg-surface: #0e121a;
+            --bg-panel: #141a26;
+            --border-glow: #1d2636;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --color-up: #00e676;
+            --color-up-glow: rgba(0, 230, 118, 0.12);
+            --color-down: #ff1744;
+            --color-down-glow: rgba(255, 23, 68, 0.12);
+            --color-accent: #00e5ff;
+            --color-accent-glow: rgba(0, 229, 255, 0.12);
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            z-index: 10;
+        }
+
+        .logo-section h1 {
+            font-weight: 800;
+            font-size: 1.6rem;
+            letter-spacing: 1.5px;
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-up) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        .logo-section p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-top: 2px;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            background: var(--bg-panel);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--color-up);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--color-up);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 340px 1fr 400px;
+            gap: 1.25rem;
+            padding: 1.25rem;
+            height: calc(100vh - 75px);
+            min-height: 0;
+        }
+
+        .panel {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .panel-header {
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--color-accent);
+            text-shadow: 0 0 5px rgba(0, 229, 255, 0.15);
+        }
+
+        /* Opportunity Scanner Ticker */
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0.75rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .scanner-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 90px;
+            align-items: center;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scanner-row:hover {
+            border-color: var(--color-accent);
+            background-color: rgba(0, 229, 255, 0.02);
+            transform: translateX(4px);
+        }
+
+        .scanner-row.active {
+            border-color: var(--color-accent);
+            background-color: rgba(0, 229, 255, 0.06);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.12);
+        }
+
+        .scanner-symbol {
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .scanner-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-left: 10px;
+        }
+
+        .scanner-price {
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .scanner-stats {
+            display: flex;
+            gap: 8px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .scanner-delta.up { color: var(--color-up); }
+        .scanner-delta.down { color: var(--color-down); }
+
+        .recommendation-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 3px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .recommendation-badge.buy {
+            background-color: var(--color-up-glow);
+            color: var(--color-up);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            box-shadow: 0 0 8px rgba(0, 230, 118, 0.2);
+        }
+
+        .recommendation-badge.sell {
+            background-color: var(--color-down-glow);
+            color: var(--color-down);
+            border: 1px solid rgba(255, 23, 68, 0.3);
+            box-shadow: 0 0 8px rgba(255, 23, 68, 0.2);
+        }
+
+        .recommendation-badge.hold {
+            background-color: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            border: 1px solid var(--border-glow);
+        }
+
+        /* Book Depth Panel */
+        .book-levels {
+            flex: 1;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            justify-content: space-between;
+            overflow-y: auto;
+        }
+
+        .book-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 80px;
+            align-items: center;
+            height: 22px;
+            position: relative;
+        }
+
+        .depth-bar {
+            height: 100%;
+            position: absolute;
+            top: 0;
+            opacity: 0.12;
+            z-index: 1;
+        }
+
+        .depth-bar.ask {
+            right: 0;
+            background-color: var(--color-down);
+        }
+
+        .depth-bar.bid {
+            left: 0;
+            background-color: var(--color-up);
+        }
+
+        .price-col {
+            z-index: 2;
+            font-weight: bold;
+        }
+
+        .price-col.ask { color: var(--color-down); }
+        .price-col.bid { color: var(--color-up); }
+
+        .size-col {
+            z-index: 2;
+            text-align: right;
+            color: var(--text-main);
+        }
+
+        .spread-row {
+            border-top: 1px solid var(--border-glow);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 4px 0;
+            margin: 4px 0;
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background-color: rgba(255,255,255,0.01);
+        }
+
+        /* Center Column Workspace */
+        .footprint-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        .footprint-scroll {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            background-color: var(--bg-panel);
+            position: relative;
+        }
+
+        .footprint-grid {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+
+        .footprint-level {
+            display: grid;
+            grid-template-columns: 90px 1fr 1fr;
+            border-bottom: 1px dashed var(--border-glow);
+            height: 32px;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+
+        .footprint-level:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .footprint-price {
+            text-align: center;
+            border-right: 1px solid var(--border-glow);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .volume-box {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .volume-box.bid {
+            justify-content: flex-end;
+            border-right: 1px solid var(--border-glow);
+        }
+
+        .volume-box.ask {
+            justify-content: flex-start;
+        }
+
+        .cvd-container {
+            height: 140px;
+            border-top: 1px solid var(--border-glow);
+            padding: 10px;
+            background-color: var(--bg-panel);
+        }
+
+        /* Right Column Diagnostics */
+        .agent-hud-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .agent-stat-box {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .agent-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent-stat-value {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .agent-stat-value.up { color: var(--color-up); text-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
+        .agent-stat-value.down { color: var(--color-down); text-shadow: 0 0 8px rgba(255, 23, 68, 0.4); }
+        .agent-stat-value.accent { color: var(--color-accent); text-shadow: 0 0 8px rgba(0, 229, 255, 0.4); }
+
+        .progress-hud {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 5px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background-color: var(--bg-base);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--border-glow);
+            margin: 4px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-up) 100%);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .active-trade-card {
+            background: var(--color-accent-glow);
+            border: 1px solid var(--color-accent);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.05);
+        }
+
+        .active-trade-card.none {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px dashed var(--border-glow);
+            color: var(--text-muted);
+            justify-content: center;
+            align-items: center;
+            height: 52px;
+            box-shadow: none;
+        }
+
+        .active-trade-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+        }
+
+        .active-trade-dir {
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            width: fit-content;
+        }
+
+        .active-trade-dir.long { background: var(--color-up-glow); color: var(--color-up); }
+        .active-trade-dir.short { background: var(--color-down-glow); color: var(--color-down); }
+
+        .trade-log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            margin-top: 5px;
+        }
+
+        .trade-log-table th {
+            color: var(--text-muted);
+            text-align: left;
+            padding: 4px 6px;
+            border-bottom: 1px solid var(--border-glow);
+            font-weight: normal;
+        }
+
+        .trade-log-table td {
+            padding: 6px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.02);
+        }
+
+        .trade-log-table tr:hover td {
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Cognitive Confluences Terminal Alert Card */
+        .signals-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .signal-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(15px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .signal-card.buy { border-left: 3px solid var(--color-up); }
+        .signal-card.sell { border-left: 3px solid var(--color-down); }
+        .signal-card.spoofing { border-left: 3px solid var(--color-accent); }
+
+        .signal-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .signal-type {
+            font-weight: bold;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+        }
+
+        .signal-type.buy { color: var(--color-up); }
+        .signal-type.sell { color: var(--color-down); }
+        .signal-type.spoofing { color: var(--color-accent); }
+
+        .signal-time {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .signal-evidence {
+            font-size: 0.75rem;
+            color: var(--text-main);
+            line-height: 1.3;
+        }
+
+        .signal-zones {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border-glow);
+            margin-top: 2px;
+        }
+    </style>
+<script src='https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js'></script>
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <h1>ANTIGRAVITY QUANT</h1>
+            <p>Real-Time Multi-Asset Scanning Brain v3.0</p>
+        </div>
+        
+        <div class="server-status">
+            <button onclick="triggerEmergencyStop()" style="background-color: #ff3366; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-right: 15px; box-shadow: 0 0 10px rgba(255,51,102,0.5);">EMERGENCY STOP</button>
+            <div class="status-dot"></div>
+            <span>ENGINE: MULTI-SCAN CONNECTED</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Column 1 (Left - 340px): Multi-Asset Scanner & Depth -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem; height: 100%; min-height: 0; overflow: hidden;">
+            <!-- Live Multi-Asset Ticker Scanner -->
+            <div class="panel" style="flex: 1.4; display: flex; flex-direction: column; min-height: 0; border-top: 2px solid var(--color-accent);">
+                <div class="panel-header" style="background: rgba(0, 229, 255, 0.02);">
+                    <h2>Opportunity Scanner</h2>
+                </div>
+                <div id="ai-scanner-ticker" class="scanner-container">
+                    <div style="text-align:center; color:var(--text-muted); padding: 30px 0;">Spinning up scanner engines...</div>
+                </div>
+            </div>
+
+            <!-- LOB Depth levels -->
+            <div class="panel" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <div class="panel-header">
+                    <h2 id="lob-header-title">L2 Depth: BTCUSD</h2>
+                </div>
+                <div id="lob-depth" class="book-levels">
+                    <div style="text-align:center; color:var(--text-muted); margin-top:40px;">Select asset to load book depth...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 2 (Center - 1fr): Footprint Grid & CVD Line Chart -->
+        <div class="panel" style="height: 100%; min-height: 0;">
+            <div class="panel-header" style="display: flex; justify-content: space-between;">
+                <h2 id="footprint-header-title">Footprint Profile: BTCUSD</h2>
+                <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">INTERVAL: 60S</div>
+            </div>
+            
+            
+            <div class="panel-header" style="border-top: 1px solid var(--border-glow)">
+                <h2>Price Action & Liquidations</h2>
+            </div>
+            <div id="tvchart" style="width: 100%; height: 250px;"></div>
+<div class="footprint-content">
+                <div class="footprint-scroll">
+                    <div id="footprint-grid" class="footprint-grid">
+                        <div style="text-align:center; color:var(--text-muted); margin-top:100px;">Awaiting trade events...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-header" style="border-top: 1px solid var(--border-glow)">
+                <h2>Cumulative Volume Delta (CVD)</h2>
+            </div>
+            <div class="cvd-container">
+                <svg id="cvd-svg" width="100%" height="100%" style="overflow: visible;"></svg>
+            </div>
+        </div>
+
+        <!-- Column 3 (Right - 400px): AI Diagnostics & setup confluences -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem; height: 100%; min-height: 0; overflow: hidden;">
+            <!-- Deep RL Agent Panel -->
+            <div class="panel" style="flex: 1.8; display: flex; flex-direction: column; min-height: 0; border-top: 2px solid var(--color-accent);">
+                <div class="panel-header" style="background: rgba(0, 229, 255, 0.02);">
+                    <h2>Deep RL Cognitive Agent</h2>
+                    <div style="display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 0.65rem; background: var(--bg-panel); padding: 4px 8px; border-radius: 12px; border: 1px solid var(--border-glow);">
+                        <div class="status-dot" style="background-color: var(--color-accent); box-shadow: 0 0 8px var(--color-accent); width: 6px; height: 6px;"></div>
+                        <span>BRAIN RUNNING</span>
+                    </div>
+                </div>
+                
+                <div style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                    <!-- Real-Time Session P&L Stats -->
+                    <div>
+                        <div class="agent-stat-label" style="text-align: center;">Total Session profit (points)</div>
+                        <div id="rl-session-pnl" class="agent-stat-value" style="font-size: 2rem; text-align: center; margin: 2px 0; font-weight: 800;">+0.0000</div>
+                        
+                        <div class="agent-hud-row" style="margin-top: 6px;">
+                            <div class="agent-stat-box" style="padding: 6px;">
+                                <div class="agent-stat-label">Win Rate</div>
+                                <div id="rl-win-rate" class="agent-stat-value accent">0.0%</div>
+                            </div>
+                            <div class="agent-stat-box" style="padding: 6px;">
+                                <div class="agent-stat-label">Total Trades</div>
+                                <div id="rl-total-trades" class="agent-stat-value">0</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-hud">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--text-muted);">
+                                <span>WIN RATIO TRACKER</span>
+                                <span id="rl-win-ratio-txt">0/0 W/L</span>
+                            </div>
+                            <div class="progress-track">
+                                <div id="rl-progress-bar" class="progress-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected active trade Card -->
+                    <div style="border-top: 1px solid var(--border-glow); padding-top: 8px;">
+                        <div class="agent-stat-label" style="margin-bottom: 4px;">Active Position (<span id="rl-active-asset-title">BTCUSD</span>)</div>
+                        <div id="rl-active-trade" class="active-trade-card none">
+                            <span>No Active Positions</span>
+                        </div>
+                    </div>
+
+                    
+                    <div style="border-top: 1px solid var(--border-glow); padding-top: 8px; margin-top: 8px;">
+                        <div class="agent-stat-label" style="margin-bottom: 4px;">Execution Slippage Log</div>
+                        <div style="max-height: 100px; overflow-y: auto;">
+                            <table class="trade-log-table">
+                                <thead>
+                                    <tr>
+                                        <th>COIN</th>
+                                        <th>PREDICTED</th>
+                                        <th>FILLED</th>
+                                        <th style="text-align: right;">SLIPPAGE</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="slippage-log-body">
+                                    <!-- Slippage rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+                    <div style="border-top: 1px solid var(--border-glow); padding-top: 8px; margin-bottom: 8px;">
+                        <div class="agent-stat-label" style="margin-bottom: 4px;">Flow Sentiment Gauge (CVD + Imbalance)</div>
+                        <div class="progress-track" style="height: 12px; margin: 0;">
+                            <div id="sentiment-gauge" class="progress-bar-fill" style="width: 50%; background: linear-gradient(90deg, var(--color-down) 0%, #64748b 50%, var(--color-up) 100%);"></div>
+                        </div>
+                    </div>
+
+<!-- Visual Neural Softmax bars -->
+                    <div style="border-top: 1px solid var(--border-glow); padding-top: 8px;">
+                        <div class="agent-stat-label" style="margin-bottom: 6px;">Neural Network Action Probabilities (<span id="rl-softmax-asset-title">BTCUSD</span>)</div>
+                        <div style="display: flex; flex-direction: column; gap: 5px; font-family: var(--font-mono); font-size: 0.65rem;">
+                            <!-- HOLD Bar -->
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 45px; color: var(--text-muted);">HOLD</div>
+                                <div class="progress-track" style="flex: 1; height: 8px; margin: 0;">
+                                    <div id="prob-hold" class="progress-bar-fill" style="width: 0%; background: #64748b;"></div>
+                                </div>
+                                <div id="prob-hold-txt" style="width: 32px; text-align: right; color: var(--text-muted);">0%</div>
+                            </div>
+                            <!-- BUY Bar -->
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 45px; color: var(--color-up); font-weight: bold;">BUY</div>
+                                <div class="progress-track" style="flex: 1; height: 8px; margin: 0;">
+                                    <div id="prob-buy" class="progress-bar-fill" style="width: 0%; background: var(--color-up);"></div>
+                                </div>
+                                <div id="prob-buy-txt" style="width: 32px; text-align: right; color: var(--color-up); font-weight: bold;">0%</div>
+                            </div>
+                            <!-- SELL Bar -->
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 45px; color: var(--color-down); font-weight: bold;">SELL</div>
+                                <div class="progress-track" style="flex: 1; height: 8px; margin: 0;">
+                                    <div id="prob-sell" class="progress-bar-fill" style="width: 0%; background: var(--color-down);"></div>
+                                </div>
+                                <div id="prob-sell-txt" style="width: 32px; text-align: right; color: var(--color-down); font-weight: bold;">0%</div>
+                            </div>
+                            <!-- CLOSE Bar -->
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 45px; color: var(--color-accent); font-weight: bold;">CLOSE</div>
+                                <div class="progress-track" style="flex: 1; height: 8px; margin: 0;">
+                                    <div id="prob-close" class="progress-bar-fill" style="width: 0%; background: var(--color-accent);"></div>
+                                </div>
+                                <div id="prob-close-txt" style="width: 32px; text-align: right; color: var(--color-accent); font-weight: bold;">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-Time Completed Trades -->
+                    <div style="border-top: 1px solid var(--border-glow); padding-top: 8px;">
+                        <div class="agent-stat-label" style="margin-bottom: 4px;">Real-Time Completed Trades</div>
+                        <div style="max-height: 100px; overflow-y: auto;">
+                            <table class="trade-log-table">
+                                <thead>
+                                    <tr>
+                                        <th>COIN</th>
+                                        <th>DIR</th>
+                                        <th>ENTRY</th>
+                                        <th>EXIT</th>
+                                        <th style="text-align: right;">PNL</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rl-completed-trades-list">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 10px 0;">No completed trades yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Cognitive Brain Feed / Signals Panel -->
+            <div class="panel" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <div class="panel-header">
+                    <h2>AI Brain Confluence Feed</h2>
+                </div>
+                <div id="signals-terminal" class="signals-list" style="flex: 1; overflow-y: auto; padding: 0.75rem;">
+                    <div style="text-align:center; color:var(--text-muted); margin-top:30px;">Tracking brain synapses & patterns...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let activeSymbol = "BTCUSD";
+        let footprintData = {}; // price -> {bid_vol, ask_vol}
+        let cvdHistory = [];
+        const maxCvdPoints = 50;
+
+        function changeViewedSymbol(symbol) {
+            if (activeSymbol === symbol) return;
+            activeSymbol = symbol;
+            footprintData = {};
+            cvdHistory = [];
+
+            // Update UI headers
+            document.getElementById("lob-header-title").textContent = `L2 Depth: ${activeSymbol}`;
+            document.getElementById("footprint-header-title").textContent = `Footprint Profile: ${activeSymbol}`;
+            document.getElementById("rl-active-asset-title").textContent = activeSymbol;
+            document.getElementById("rl-softmax-asset-title").textContent = activeSymbol;
+
+            document.getElementById("lob-depth").innerHTML = `<div style="text-align:center; color:var(--text-muted); margin-top:40px;">Switching to ${activeSymbol}...</div>`;
+            document.getElementById("footprint-grid").innerHTML = `<div style="text-align:center; color:var(--text-muted); margin-top:80px;">Loading ${activeSymbol} footprints...</div>`;
+            
+            // Re-render rows to update active styles
+            renderScannerTicker(lastScannerData);
+        }
+
+        // Establish real-time Server-Sent Events stream
+        const eventSource = new EventSource("/stream");
+        let lastScannerData = {};
+
+        eventSource.onmessage = function(event) {
+            try {
+                const data = jsonParseOrNull(event.data);
+                if (!data) return;
+
+                // Handle Alerts
+                if (data.alert) {
+                    addSignalAlert(data.alert);
+                    return;
+                }
+
+                // Handle Deep RL Agent Updates (Multi-Asset)
+                if (data.type === "AGENT_UPDATE") {
+                    if (data.scanner) {
+                        try {
+                            lastScannerData = data.scanner;
+                            renderScannerTicker(data.scanner);
+                        } catch(e) { console.error("Scanner Error:", e); }
+                        
+                        // If selected symbol price is ticked, update footprint and CVD stubs
+                        const selectedMetrics = data.scanner[activeSymbol];
+                        if (selectedMetrics) {
+                            try { updateCandlestick(selectedMetrics.price); } catch(e) {}
+                            try { updateFootprints(selectedMetrics.delta > 0 ? { [selectedMetrics.price]: { bid_vol: 0, ask_vol: selectedMetrics.delta } } : { [selectedMetrics.price]: { bid_vol: Math.abs(selectedMetrics.delta), ask_vol: 0 } }); } catch(e) {}
+                            try { updateCVD(selectedMetrics.delta); } catch(e) {}
+                            try { updateSoftmaxBars(selectedMetrics.policy_probs); } catch(e) { console.error("Softmax Error:", e); }
+                        }
+                    }
+                    try { updateAgentMonitor(data); } catch(e) { console.error("Agent Monitor Error:", e); }
+                }
+
+                // Verify symbol match for high-frequency direct streaming blocks
+                if (data.symbol !== activeSymbol) return;
+
+                if (data.type === "DEPTH") {
+                    updateLOB(data.bids, data.asks);
+                } else if (data.type === "FOOTPRINT") {
+                    updateFootprints(data.volume_at_price);
+                    updateCVD(data.total_delta);
+                }
+            } catch (e) {
+                console.error("Failed to parse event stream message:", e);
+            }
+        };
+
+        function renderScannerTicker(scanner) {
+            const container = document.getElementById("ai-scanner-ticker");
+            if (!scanner || Object.keys(scanner).length === 0) return;
+
+            let html = "";
+            Object.keys(scanner).forEach(sym => {
+                const item = scanner[sym];
+                const activeClass = sym === activeSymbol ? "active" : "";
+                
+                // Formats price decimals cleanly
+                const priceFormatted = item.price > 1000 ? item.price.toFixed(1) : (item.price > 10 ? item.price.toFixed(2) : item.price.toFixed(4));
+                const deltaFormatted = item.delta >= 0 ? "+" + item.delta.toFixed(0) : item.delta.toFixed(0);
+                const deltaClass = item.delta >= 0 ? "up" : "down";
+                const cvdFormatted = item.cvd >= 0 ? "+" + (item.cvd/1000).toFixed(1) + "k" : (item.cvd/1000).toFixed(1) + "k";
+                
+                // Recommendation glowing badge
+                let badgeClass = "hold";
+                if (item.bias === "BUY") badgeClass = "buy";
+                else if (item.bias === "SELL") badgeClass = "sell";
+                
+                html += `
+                <div class="scanner-row ${activeClass}" onclick="changeViewedSymbol('${sym}')">
+                    <div class="scanner-symbol">${sym}</div>
+                    <div class="scanner-metrics">
+                        <div class="scanner-price">${priceFormatted}</div>
+                        <div class="scanner-stats">
+                            <span>1m Δ: <strong class="${deltaClass}">${deltaFormatted}</strong></span>
+                            <span>CVD: <strong>${cvdFormatted}</strong></span>
+                        </div>
+                    </div>
+                    <span class="recommendation-badge ${badgeClass}">${item.bias}</span>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function updateAgentMonitor(data) {
+            // Update Session P&L
+            const pnlEl = document.getElementById("rl-session-pnl");
+            const pnlVal = data.session_pnl || 0.0;
+            
+            // Decimal formatting based on precision
+            pnlEl.textContent = (pnlVal >= 0 ? "+" : "") + pnlVal.toFixed(4);
+            pnlEl.className = "agent-stat-value " + (pnlVal >= 0 ? "up" : "down");
+            
+            // Update Win Rate and Counts
+            const winRate = data.win_rate || 0.0;
+            document.getElementById("rl-win-rate").textContent = winRate.toFixed(1) + "%";
+            document.getElementById("rl-total-trades").textContent = data.total_trades || 0;
+            document.getElementById("rl-win-ratio-txt").textContent = `${data.wins || 0}/${data.losses || 0} W/L`;
+            
+            // Update progress bar width
+            document.getElementById("rl-progress-bar").style.width = winRate.toFixed(1) + "%";
+            
+            // Update Active Trade position HUD card for selected symbol
+            const activeContainer = document.getElementById("rl-active-trade");
+            const activePos = (data.active_positions || {})[activeSymbol];
+            
+            if (activePos) {
+                const pnlClass = (activePos.pnl || 0) >= 0 ? "up" : "down";
+                
+                // Smart float format for visual accuracy
+                const pnlFormatted = (activePos.pnl || 0) >= 0 ? "+" + (activePos.pnl || 0).toFixed(4) : (activePos.pnl || 0).toFixed(4);
+                const entryFormatted = (activePos.entry_price || 0) > 1000 ? (activePos.entry_price || 0).toFixed(1) : ((activePos.entry_price || 0) > 10 ? (activePos.entry_price || 0).toFixed(2) : (activePos.entry_price || 0).toFixed(4));
+                const slFormatted = (activePos.sl || 0) > 1000 ? (activePos.sl || 0).toFixed(1) : (activePos.sl || 0).toFixed(3);
+                const tpFormatted = (activePos.tp || 0) > 1000 ? (activePos.tp || 0).toFixed(1) : (activePos.tp || 0).toFixed(3);
+                
+                const dirClass = (activePos.direction || "NONE").toLowerCase();
+                
+                activeContainer.className = "active-trade-card";
+                activeContainer.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span class="active-trade-dir ${dirClass}">${activePos.direction}</span>
+                        <span style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800;" class="agent-stat-value ${pnlClass}">${pnlFormatted}</span>
+                    </div>
+                    <div class="active-trade-grid">
+                        <div>Entry Price:</div>
+                        <div style="text-align: right; font-weight: bold; color: var(--text-main);">${entryFormatted}</div>
+                        <div>SL / TP Targets:</div>
+                        <div style="text-align: right; color: var(--text-muted); font-size: 0.65rem;">${slFormatted} / ${tpFormatted}</div>
+                    </div>
+                `;
+            } else {
+                activeContainer.className = "active-trade-card none";
+                activeContainer.innerHTML = `<span>No Active Positions on ${activeSymbol}</span>`;
+            }
+            
+            // Update Completed Trades List Table
+            const tradesBody = document.getElementById("rl-completed-trades-list");
+            if (data.recent_trades && data.recent_trades.length > 0) {
+                let html = "";
+                data.recent_trades.forEach(t => {
+                    const pnlClass = t.pnl > 0 ? "up" : (t.pnl < 0 ? "down" : "");
+                    const pnlTxt = (t.pnl >= 0 ? "+" : "") + (t.pnl > 100 ? t.pnl.toFixed(1) : t.pnl.toFixed(4));
+                    const dirClass = t.direction.toLowerCase();
+                    const entryFormatted = t.entry_price > 1000 ? t.entry_price.toFixed(1) : t.entry_price.toFixed(3);
+                    const exitFormatted = t.exit_price > 1000 ? t.exit_price.toFixed(1) : t.exit_price.toFixed(3);
+                    
+                    html += `
+                    <tr>
+                        <td><strong>${t.asset}</strong></td>
+                        <td><span class="active-trade-dir ${dirClass}" style="padding: 1px 4px; font-size: 0.55rem; font-weight:bold; width:fit-content; display:inline-block;">${t.direction}</span></td>
+                        <td>${entryFormatted}</td>
+                        <td>${exitFormatted}</td>
+                        <td style="text-align: right; font-weight: bold;" class="agent-stat-value ${pnlClass}">${pnlTxt}</td>
+                    </tr>`;
+                });
+                tradesBody.innerHTML = html;
+            } else {
+                tradesBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 10px 0;">No completed trades yet</td>
+                </tr>`;
+            }
+        }
+
+        function updateSoftmaxBars(probs) {
+            if (!probs) return;
+            
+            const keys = ["HOLD", "BUY", "SELL", "CLOSE"];
+            keys.forEach(key => {
+                try {
+                    const elId = `prob-${key.toLowerCase()}`;
+                    const txtId = `prob-${key.toLowerCase()}-txt`;
+                    const percentage = ((probs[key] || 0) * 100).toFixed(0);
+                    
+                    document.getElementById(elId).style.width = percentage + "%";
+                    document.getElementById(txtId).textContent = percentage + "%";
+                } catch(e) {}
+            });
+        }
+
+        function jsonParseOrNull(str) {
+            try {
+                return JSON.parse(str);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function updateLOB(bids, asks) {
+            const container = document.getElementById("lob-depth");
+            if (!bids || !asks || bids.length === 0) return;
+
+            let html = "";
+            const maxLOBVal = Math.max(
+                ...asks.map(x => x[1]),
+                ...bids.map(x => x[1])
+            );
+
+            // Render Asks
+            const sortedAsks = [...asks].slice(0, 6).reverse();
+            sortedAsks.forEach(level => {
+                const price = activeSymbol.includes("XRP") ? level[0].toFixed(4) : (activeSymbol.includes("SOL") || activeSymbol.includes("AVAX") ? level[0].toFixed(2) : level[0].toFixed(1));
+                const size = level[1].toFixed(1);
+                const pct = (level[1] / maxLOBVal) * 100;
+                
+                html += `
+                <div class="book-row">
+                    <div class="depth-bar ask" style="width: ${pct}%"></div>
+                    <div class="price-col ask">${price}</div>
+                    <div></div>
+                    <div class="size-col">${size}</div>
+                </div>`;
+            });
+
+            // Render Spread
+            const bestBid = bids[0][0];
+            const bestAsk = asks[0][0];
+            const spread = (bestAsk - bestBid);
+            const spreadFormatted = activeSymbol.includes("XRP") ? spread.toFixed(4) : spread.toFixed(2);
+            html += `<div class="spread-row">SPREAD: ${spreadFormatted}</div>`;
+
+            // Render Bids
+            const sortedBids = [...bids].slice(0, 6);
+            sortedBids.forEach(level => {
+                const price = activeSymbol.includes("XRP") ? level[0].toFixed(4) : (activeSymbol.includes("SOL") || activeSymbol.includes("AVAX") ? level[0].toFixed(2) : level[0].toFixed(1));
+                const size = level[1].toFixed(1);
+                const pct = (level[1] / maxLOBVal) * 100;
+                
+                html += `
+                <div class="book-row">
+                    <div class="depth-bar bid" style="width: ${pct}%"></div>
+                    <div class="price-col bid">${price}</div>
+                    <div></div>
+                    <div class="size-col">${size}</div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function updateFootprints(volumeMap) {
+            const container = document.getElementById("footprint-grid");
+            if (!volumeMap) return;
+
+            Object.keys(volumeMap).forEach(priceKey => {
+                const price = parseFloat(priceKey);
+                footprintData[price] = volumeMap[priceKey];
+            });
+
+            const sortedPrices = Object.keys(footprintData).map(Number).sort((a,b) => b-a).slice(0, 20);
+            let html = "";
+
+            sortedPrices.forEach(price => {
+                const vols = footprintData[price];
+                const bid = vols.bid_vol;
+                const ask = vols.ask_vol;
+                
+                const delta = ask - bid;
+                let bgStyle = "";
+                if (delta > 0) {
+                    const opacity = Math.min(0.6, delta / 100);
+                    bgStyle = `background-color: rgba(0, 230, 118, ${opacity})`;
+                } else if (delta < 0) {
+                    const opacity = Math.min(0.6, Math.abs(delta) / 100);
+                    bgStyle = `background-color: rgba(255, 23, 68, ${opacity})`;
+                }
+
+                const priceFormatted = activeSymbol.includes("XRP") ? price.toFixed(4) : (activeSymbol.includes("SOL") || activeSymbol.includes("AVAX") ? price.toFixed(2) : price.toFixed(1));
+
+                html += `
+                <div class="footprint-level" style="${bgStyle}">
+                    <div class="footprint-price">${priceFormatted}</div>
+                    <div class="volume-box bid">${bid.toFixed(1)}</div>
+                    <div class="volume-box ask">${ask.toFixed(1)}</div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function updateCVD(totalDelta) {
+            cvdHistory.push(totalDelta);
+            if (cvdHistory.length > maxCvdPoints) {
+                cvdHistory.shift();
+            }
+
+            const svg = document.getElementById("cvd-svg");
+            const width = svg.clientWidth;
+            const height = svg.clientHeight;
+            svg.innerHTML = "";
+
+            if (cvdHistory.length < 2) return;
+
+            let cumulative = 0;
+            const points = cvdHistory.map(delta => {
+                cumulative += delta;
+                return cumulative;
+            });
+
+            const minVal = Math.min(...points);
+            const maxVal = Math.max(...points);
+            const range = maxVal - minVal || 1.0;
+
+            const linePoints = points.map((val, idx) => {
+                const x = (idx / (points.length - 1)) * width;
+                const y = height - ((val - minVal) / range) * (height - 20) - 10;
+                return `${x},${y}`;
+            }).join(" ");
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke", "#00e5ff");
+            path.setAttribute("stroke-width", "2");
+            path.setAttribute("points", linePoints);
+            svg.appendChild(path);
+        }
+
+        function addSignalAlert(alert) {
+            const terminal = document.getElementById("signals-terminal");
+            
+            if (terminal.innerHTML.includes("Tracking brain synapses")) {
+                terminal.innerHTML = "";
+            }
+
+            const isBuy = alert.signal_type.includes("BUY") || alert.signal_type.includes("IMBALANCE") && alert.evidence.includes("buying");
+            const isSpoof = alert.signal_type.includes("SPOOFING");
+
+            let typeClass = "sell";
+            if (isBuy) typeClass = "buy";
+            else if (isSpoof) typeClass = "spoofing";
+
+            const timeStr = new Date(alert.timestamp_ms).toLocaleTimeString();
+            const card = document.createElement("div");
+            card.className = `signal-card ${typeClass}`;
+            
+            // Format dynamic confluences nicely
+            card.innerHTML = `
+                <div class="signal-row">
+                    <span class="signal-type ${typeClass}">${alert.signal_type} (${alert.asset})</span>
+                    <span class="signal-time">${timeStr}</span>
+                </div>
+                <div class="signal-evidence">${alert.evidence}</div>
+                <div class="signal-zones">
+                    <strong>ENTRY:</strong> ${alert.entry_zone} | <strong>STOP:</strong> ${alert.exit_zone}
+                </div>
+            `;
+
+            terminal.prepend(card);
+            
+            
+        // TRADINGVIEW CHART INITIALIZATION
+        let tvChart = null;
+        let candleSeries = null;
+        let currentCandle = null;
+        let liqLines = [];
+
+        function initTradingView() {
+            if (typeof LightweightCharts === 'undefined') {
+                return;
+            }
+            if (document.getElementById('tvchart') && !tvChart) {
+                try {
+                    tvChart = LightweightCharts.createChart(document.getElementById('tvchart'), {
+                        layout: { background: { color: 'transparent' }, textColor: '#cbd5e1' },
+                        grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                        timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true, secondsVisible: true }
+                    });
+                    candleSeries = tvChart.addCandlestickSeries({
+                        upColor: '#00ffcc', downColor: '#ff3366', borderVisible: false, wickUpColor: '#00ffcc', wickDownColor: '#ff3366'
+                    });
+                } catch(e) {}
+            }
+        }
+
+        function updateCandlestick(price) {
+            initTradingView();
+            const now = Math.floor(Date.now() / 1000);
+            if (!currentCandle || now > currentCandle.time + 60) {
+                // start a new 1-minute candle
+                // Truncate to minute boundary to avoid weird rendering
+                const minuteTime = now - (now % 60);
+                currentCandle = { time: minuteTime, open: price, high: price, low: price, close: price };
+            } else {
+                currentCandle.high = Math.max(currentCandle.high, price);
+                currentCandle.low = Math.min(currentCandle.low, price);
+                currentCandle.close = price;
+            }
+            if(candleSeries) {
+                try {
+                    candleSeries.update(currentCandle);
+                } catch(e) {}
+                updateLiquidationHeatmap(price);
+            }
+        }
+
+        function updateLiquidationHeatmap(currentPrice) {
+            // Mock Liquidation clusters around current price
+            if (liqLines.length === 0 && candleSeries) {
+                liqLines.push(candleSeries.createPriceLine({ price: currentPrice * 1.002, color: 'rgba(255, 51, 102, 0.5)', lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: 'Short Liq Cluster' }));
+                liqLines.push(candleSeries.createPriceLine({ price: currentPrice * 0.998, color: 'rgba(0, 255, 204, 0.5)', lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: 'Long Liq Cluster' }));
+            }
+        }
+
+        function updateSlippageLog(recentTrades) {
+            const tbody = document.getElementById("slippage-log-body");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            recentTrades.forEach(t => {
+                let slipStr = (t.slippage_pct * 100).toFixed(4) + "%";
+                let slipColor = t.slippage_pct > 0.0005 ? 'var(--color-down)' : 'var(--color-up)';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${t.asset}</td>
+                        <td style="font-family: var(--font-mono);">${(t.predicted_price || t.entry_price).toFixed(4)}</td>
+                        <td style="font-family: var(--font-mono);">${t.entry_price.toFixed(4)}</td>
+                        <td style="text-align: right; font-family: var(--font-mono); color: ${slipColor};">${slipStr}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateSentimentGauge(scannerData) {
+            const gauge = document.getElementById("sentiment-gauge");
+            if (!gauge || !scannerData["BTCUSD"]) return;
+            let cvd = scannerData["BTCUSD"].cvd;
+            // Map CVD roughly from -1M to +1M -> 0% to 100%
+            let pct = 50 + (cvd / 1000000) * 50;
+            pct = Math.max(0, Math.min(100, pct));
+            gauge.style.width = pct + "%";
+        }
+
+            // Limit to 50 alerts
+            while (terminal.children.length > 50) {
+                terminal.removeChild(terminal.lastChild);
+            }
+        }
+
+        function triggerEmergencyStop() {
+            if (confirm("WARNING: This will lock the agent and market close all active positions. Proceed?")) {
+                fetch("/kill", { method: "POST" })
+                    .then(r => alert("KILL SWITCH ENGAGED! Agent Locked."))
+                    .catch(e => console.error(e));
+            }
+        }
+    </script>
+</body>
+</html>

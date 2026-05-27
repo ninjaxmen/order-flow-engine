@@ -1,0 +1,7 @@
+.venv
+__pycache__
+*.pyc
+logs/*
+cache/*
+!cache/paper_scalper_trades.json
+!cache/expert_weights.pth
