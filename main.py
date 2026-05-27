@@ -58,8 +58,8 @@ class OrderFlowEngine:
         # Cache Manager for state persistence
         self.cache_manager = CachePersistenceManager()
         
-        # Dashboard HTTP/SSE Server
-        self.dashboard_server = OrderFlowDashboardServer(on_kill_switch=self.trigger_kill_switch)
+        # Dashboard HTTP/SSE Server (Bind to 0.0.0.0 for external container access)
+        self.dashboard_server = OrderFlowDashboardServer(host="0.0.0.0", on_kill_switch=self.trigger_kill_switch)
         
         # Heuristics Analyzers
         self.absorption_analyser = AbsorptionAnalyser()
