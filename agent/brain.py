@@ -211,7 +211,19 @@ class DeepOrderFlowAgent:
                 #     policy_np[2] *= 0.3  # Penalize SELL
                 #     policy_np = policy_np / policy_np.sum()  # Re-normalize
                 
-                # Stochastic Exploration Mode: Sample action to allow learning from mistakes
+                # Stochastic Exploration Mode (Demo Mode: 35% pure random action exploration to trade and learn aggressively)
+                exploration_rate = 0.35
+                if random.random() < exploration_rate:
+                    # Uniformly distribute probability to encourage entries/exits
+                    policy_np = np.array([0.10, 0.40, 0.40, 0.10])
+                else:
+                    # Scale down the HOLD action and boost entry targets gently to keep it highly active
+                    policy_np[0] *= 0.4
+                    policy_np[1] *= 1.8
+                    policy_np[2] *= 1.8
+                    policy_np[3] *= 1.2
+                    policy_np = policy_np / policy_np.sum()
+                
                 action = int(np.random.choice(self.action_dim, p=policy_np))
                 confidence = float(policy_np[action])
                 
